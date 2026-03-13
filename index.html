@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor de Playlist de YouTube</title>
+    <title>Visor de Playlist con Descargas</title>
     <style>
         * {
             box-sizing: border-box;
@@ -62,6 +62,7 @@
             cursor: pointer;
             font-weight: bold;
             font-size: 16px;
+            transition: all 0.3s;
         }
         button:hover { 
             transform: translateY(-2px);
@@ -96,7 +97,7 @@
             display: none;
         }
         
-        /* Contenedor del video - PROPORCIÓN 16:9 */
+        /* Contenedor del video */
         .video-container {
             display: none;
             margin-top: 20px;
@@ -104,7 +105,7 @@
         
         .video-wrapper {
             position: relative;
-            padding-bottom: 56.25%; /* 16:9 -altura normal de video */
+            padding-bottom: 56.25%;
             height: 0;
             overflow: hidden;
             background: #000;
@@ -120,6 +121,62 @@
             border: 0;
         }
 
+        /* Sección de descargas */
+        .download-section {
+            margin-top: 30px;
+            background: linear-gradient(135deg, #2d3436 0%, #1e272e 100%);
+            padding: 25px;
+            border-radius: 10px;
+            border: 2px solid #ff4757;
+        }
+        .download-section h3 {
+            margin-top: 0;
+            color: #2ed573;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .download-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .download-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #3742fa 0%, #5352ed 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(55, 66, 250, 0.4);
+        }
+        .download-btn.secondary {
+            background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%);
+        }
+        .download-btn.secondary:hover {
+            box-shadow: 0 8px 25px rgba(46, 213, 115, 0.4);
+        }
+        .download-btn.warning {
+            background: linear-gradient(135deg, #ffa502 0%, #ff7f50 100%);
+        }
+        .download-btn.warning:hover {
+            box-shadow: 0 8px 25px rgba(255, 165, 2, 0.4);
+        }
+
         .info-box {
             background: #3a3a5e;
             padding: 15px;
@@ -128,12 +185,34 @@
             font-size: 0.9em;
             border-left: 4px solid #ff4757;
         }
+
+        .notice {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 0.85em;
+            color: #ccc;
+        }
+
+        .video-info {
+            background: #3a3a5e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .video-info p {
+            margin: 5px 0;
+        }
+        .video-info strong {
+            color: #ff4757;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h2>🎬 Visor de Playlist de YouTube</h2>
+        <h2>📥 Visor de Playlist con Descargas</h2>
         
         <div class="input-group">
             <input type="text" id="playlistLink" placeholder="Pega aquí el link de la playlist...">
@@ -148,7 +227,7 @@
             <p>Cargando playlist...</p>
         </div>
 
-        <!-- Reproductor con tamaño normal 16:9 -->
+        <!-- Reproductor -->
         <div class="video-container" id="video-container">
             <div class="video-wrapper">
                 <iframe id="youtube-player" 
@@ -159,26 +238,85 @@
                     allowfullscreen>
                 </iframe>
             </div>
+            
+            <div class="video-info">
+                <p><strong>📋 Playlist ID:</strong> <span id="playlist-id">-</span></p>
+                <p><strong>💡 Tip:</strong> Usa el botón ☰ en el reproductor para ver todos los videos de la lista</p>
+            </div>
+        </div>
+
+        <!-- Sección de Descargas -->
+        <div class="download-section" id="download-section" style="display: none;">
+            <h3>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Descargar Videos
+            </h3>
+            
+            <p>Selecciona un servicio para descargar:</p>
+            
+            <div class="download-buttons">
+                <!-- Descargar video individual -->
+                <button class="download-btn" onclick="abrirDescargaIndividual()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                    </svg>
+                    Descargar Video Actual
+                </button>
+
+                <!-- Descargar playlist completa -->
+                <button class="download-btn secondary" onclick="abrirDescargaPlaylist()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Descargar Playlist Completa
+                </button>
+
+                <!-- Copiar link -->
+                <button class="download-btn warning" onclick="copiarLinkPlaylist()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    Copiar Link de Playlist
+                </button>
+            </div>
+
+            <div class="notice">
+                <strong>📌 Instrucciones:</strong><br>
+                • <strong>Video Individual:</strong> Abre un servicio donde podrás pegar el link del video que estés viendo<br>
+                • <strong>Playlist Completa:</strong> Abre un servicio especializado en descargar playlists completas (puede requerir registro)<br>
+                • <strong>Copiar Link:</strong> Copia el link de la playlist para usarlo en otros servicios
+            </div>
         </div>
         
         <div class="info-box">
-            <strong>ℹ️ Cómo ver la lista completa:</strong>
-            <p>1. El video se muestra con tamaño normal (16:9)</p>
-            <p>2. Para ver la lista de videos, haz clic en el ícono <strong>☰ (lista)</strong> en la esquina superior derecha del reproductor</p>
-            <p>3. La lista se desplegará sobre el video mostrando todos los videos de la playlist</p>
+            <strong>ℹ️ Cómo usar:</strong>
+            <p>1. Pega el link de la playlist de YouTube</p>
+            <p>2. Haz clic en "Cargar Lista" para ver el video</p>
+            <p>3. Usa los botones de descarga para bajar los videos</p>
         </div>
     </div>
 
     <script>
+        let currentPlaylistId = '';
+        let currentPlaylistUrl = '';
+
         function cargarPlaylist() {
             const input = document.getElementById('playlistLink').value.trim();
             const container = document.getElementById('video-container');
             const iframe = document.getElementById('youtube-player');
             const errorMsg = document.getElementById('error-msg');
             const loader = document.getElementById('loader');
+            const downloadSection = document.getElementById('download-section');
 
             errorMsg.style.display = 'none';
             container.style.display = 'none';
+            downloadSection.style.display = 'none';
             loader.style.display = 'block';
 
             if (!input) {
@@ -190,14 +328,18 @@
             const playlistId = extraerPlaylistId(input);
 
             if (playlistId) {
-                // URL con parámetros optimizados
-                const embedUrl = `https://www.youtube.com/embed/videoseries?list=${playlistId}&index=1&autoplay=0&rel=0`;
+                currentPlaylistId = playlistId;
+                currentPlaylistUrl = input;
+                
+                const embedUrl = `https://www.youtube.com/embed/videoseries?list=${playlistId}&index=1&autoplay=0&rel=0&modestbranding=1`;
                 
                 iframe.src = embedUrl;
                 
                 setTimeout(() => {
                     loader.style.display = 'none';
                     container.style.display = 'block';
+                    downloadSection.style.display = 'block';
+                    document.getElementById('playlist-id').textContent = playlistId;
                 }, 1500);
             } else {
                 mostrarError('❌ Link inválido. Debe contener "list=" en la URL.');
@@ -218,6 +360,71 @@
             const errorMsg = document.getElementById('error-msg');
             errorMsg.innerText = mensaje;
             errorMsg.style.display = 'block';
+        }
+
+        // Abrir servicio para descargar video individual
+        function abrirDescargaIndividual() {
+            // Servicios populares de descarga
+            const servicios = [
+                'https://en.y2mate.is/',
+                'https://savefrom.net/',
+                'https://yt5s.com/',
+                'https://loader.to/'
+            ];
+            
+            // Abrir el primer servicio en una nueva pestaña
+            const servicio = servicios[Math.floor(Math.random() * servicios.length)];
+            const nuevaVentana = window.open(servicio, '_blank');
+            
+            if (!nuevaVentana || nuevaVentana.closed || typeof nuevaVentana.closed == 'undefined') {
+                alert('⚠️ El navegador bloqueó la ventana emergente. Por favor permite pop-ups para este sitio.\n\nServicios recomendados:\n• y2mate.is\n• savefrom.net\n• yt5s.com');
+            } else {
+                setTimeout(() => {
+                    alert('💡 En el servicio de descarga:\n\n1. Pega el link del video que quieres descargar\n2. Selecciona la calidad (MP4)\n3. Haz clic en Descargar\n\nEl link actual de la playlist está en el portapapeles.');
+                }, 1000);
+            }
+            
+            // Copiar el link al portapapeles automáticamente
+            navigator.clipboard.writeText(currentPlaylistUrl).catch(err => {
+                console.error('Error al copiar:', err);
+            });
+        }
+
+        // Abrir servicio para descargar playlist completa
+        function abrirDescargaPlaylist() {
+            // Servicios que permiten descargar playlists completas
+            const servicios = [
+                'https://loader.to/playlist.php',
+                'https://y2mate.is/playlist',
+                'https://playlist-downloader.com/'
+            ];
+            
+            const servicio = servicios[0]; // Usar loader.to que es el más confiable
+            const nuevaVentana = window.open(servicio, '_blank');
+            
+            if (!nuevaVentana || nuevaVentana.closed || typeof nuevaVentana.closed == 'undefined') {
+                alert('⚠️ El navegador bloqueó la ventana emergente.\n\nServicio recomendado: loader.to/playlist.php');
+            } else {
+                setTimeout(() => {
+                    alert('📦 Para descargar la playlist completa:\n\n1. Pega el link de la playlist\n2. Selecciona el formato (MP3 o MP4)\n3. Elige la calidad\n4. Haz clic en Descargar\n\n¡Se descargarán todos los videos en un ZIP!');
+                }, 1000);
+            }
+        }
+
+        // Copiar link de la playlist
+        function copiarLinkPlaylist() {
+            navigator.clipboard.writeText(currentPlaylistUrl).then(() => {
+                alert('✅ Link copiado al portapapeles:\n\n' + currentPlaylistUrl);
+            }).catch(err => {
+                // Fallback para navegadores antiguos
+                const textArea = document.createElement('textarea');
+                textArea.value = currentPlaylistUrl;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('✅ Link copiado al portapapeles');
+            });
         }
 
         document.getElementById('playlistLink').addEventListener('keypress', function(e) {
