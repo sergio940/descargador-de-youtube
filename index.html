@@ -21,7 +21,7 @@
         }
         .container {
             width: 100%;
-            max-width: 1000px;
+            max-width: 1200px;
             background: #2a2a3e;
             padding: 30px;
             border-radius: 15px;
@@ -48,7 +48,6 @@
             background: #1a1a2e;
             color: white;
             font-size: 16px;
-            transition: border-color 0.3s;
         }
         input:focus {
             outline: none;
@@ -63,26 +62,28 @@
             cursor: pointer;
             font-weight: bold;
             font-size: 16px;
-            transition: transform 0.2s, box-shadow 0.2s;
         }
         button:hover { 
             transform: translateY(-2px);
             box-shadow: 0 5px 20px rgba(255, 71, 87, 0.4);
         }
-        button:active {
-            transform: translateY(0);
-        }
 
-        /* Contenedor del video */
+        /* Contenedor principal - Video + Lista */
+        .player-container {
+            display: none;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        /* Versión desktop: video arriba, lista abajo */
         .video-wrapper {
-            position: relative;
             width: 100%;
+            position: relative;
             padding-bottom: 56.25%;
             height: 0;
             background: #000;
             border-radius: 10px;
             overflow: hidden;
-            display: none;
         }
         
         iframe {
@@ -94,7 +95,6 @@
             border: 0;
         }
 
-        /* Loader animado */
         .loader {
             display: none;
             text-align: center;
@@ -131,15 +131,13 @@
             font-size: 0.9em;
             border-left: 4px solid #ff4757;
         }
-        
-        .example-link {
-            background: #1a1a2e;
-            padding: 10px;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 0.85em;
-            margin-top: 10px;
-            word-break: break-all;
+
+        /* NUEVO: Contenedor específico para que aparezca la lista */
+        .playlist-embed-container {
+            margin-top: 30px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
         }
     </style>
 </head>
@@ -158,85 +156,80 @@
         <!-- Loader -->
         <div class="loader" id="loader">
             <div class="spinner"></div>
-            <p>Cargando playlist...</p>
+            <p>Cargando playlist completa...</p>
         </div>
 
-        <!-- Reproductor -->
-        <div class="video-wrapper" id="video-container">
-            <iframe id="youtube-player" 
-                src="" 
-                title="YouTube video player" 
-                frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                allowfullscreen>
-            </iframe>
+        <!-- Reproductor con lista -->
+        <div class="player-container" id="player-container">
+            <div class="playlist-embed-container">
+                <iframe id="youtube-player" 
+                    src="" 
+                    title="YouTube video player" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    allowfullscreen>
+                </iframe>
+            </div>
         </div>
         
         <div class="info-box">
             <strong>ℹ️ Información:</strong>
-            <p>La lista de reproducción aparecerá a la derecha del video (en PC) o debajo (en móvil). 
-            Si no ves la lista, asegúrate de que el link sea de una playlist pública.</p>
-            <p><strong>Ejemplo de link válido:</strong></p>
-            <div class="example-link">https://www.youtube.com/playlist?list=PLxxxxxxxxxxxxx</div>
+            <p>La lista de reproducción aparecerá debajo del video. Si no la ves, haz clic en el ícono de lista (☰) en la esquina superior derecha del reproductor.</p>
         </div>
     </div>
 
     <script>
         function cargarPlaylist() {
             const input = document.getElementById('playlistLink').value.trim();
-            const container = document.getElementById('video-container');
+            const container = document.getElementById('player-container');
             const iframe = document.getElementById('youtube-player');
             const errorMsg = document.getElementById('error-msg');
             const loader = document.getElementById('loader');
 
-            // Resetear estados
             errorMsg.style.display = 'none';
             container.style.display = 'none';
             loader.style.display = 'block';
 
-            // Validar que haya input
             if (!input) {
                 mostrarError('⚠️ Por favor, pega un link de playlist.');
                 loader.style.display = 'none';
                 return;
             }
 
-            // Extraer el ID de la playlist
             const playlistId = extraerPlaylistId(input);
 
             if (playlistId) {
-                // Construir URL con múltiples parámetros para mejor compatibilidad
-                const embedUrl = `https://www.youtube.com/embed?listType=playlist&list=${playlistId}&autoplay=0&rel=0&modestbranding=1`;
+                // URL MEJORADA con parámetros para FORZAR la lista
+                // index=1 es CLAVE - fuerza a YouTube a mostrar la lista
+                const embedUrl = `https://www.youtube.com/embed/videoseries?list=${playlistId}&index=1&autoplay=0&rel=0`;
                 
-                // Cargar el iframe
                 iframe.src = embedUrl;
                 
-                // Mostrar el contenedor después de un pequeño delay para que cargue
                 setTimeout(() => {
                     loader.style.display = 'none';
-                    container.style.display = 'block';
-                }, 1500);
+                    container.style.display = 'flex';
+                    
+                    // Ajustar altura del iframe para que quepa la lista
+                    // En desktop: más alto para ver video + lista
+                    // En móvil: altura normal
+                    if (window.innerWidth > 768) {
+                        iframe.style.height = '700px';
+                    } else {
+                        iframe.style.height = '100%';
+                    }
+                }, 2000);
             } else {
-                mostrarError('❌ Link inválido. Asegúrate de que sea una playlist de YouTube y contenga "list=" en la URL.');
+                mostrarError('❌ Link inválido. Debe contener "list=" en la URL.');
                 loader.style.display = 'none';
             }
         }
 
         function extraerPlaylistId(url) {
-            // Método 1: Buscar list= en la URL
             const regex1 = /[?&]list=([^&]+)/;
             const match1 = url.match(regex1);
             if (match1 && match1[1]) {
                 return match1[1];
             }
-
-            // Método 2: Para URLs cortas o diferentes formatos
-            const regex2 = /playlist\?list=([^&]+)/;
-            const match2 = url.match(regex2);
-            if (match2 && match2[1]) {
-                return match2[1];
-            }
-
             return null;
         }
 
@@ -246,7 +239,6 @@
             errorMsg.style.display = 'block';
         }
 
-        // Permitir cargar con Enter
         document.getElementById('playlistLink').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 cargarPlaylist();
