@@ -5,61 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visor de Playlist Completa</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a1a;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
+            padding: 30px;
             margin: 0;
+            min-height: 100vh;
         }
         .container {
             width: 100%;
-            max-width: 900px; /* Ancho suficiente para que quepa la lista al lado */
-            background: #2a2a2a;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            max-width: 1000px;
+            background: #2a2a3e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
         }
-        h2 { margin-top: 0; color: #ff0000; }
+        h2 { 
+            margin-top: 0; 
+            color: #ff4757;
+            text-align: center;
+        }
         
         .input-group {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
         }
         input {
             flex-grow: 1;
-            padding: 12px;
-            border: 1px solid #444;
-            border-radius: 5px;
-            background: #333;
+            min-width: 250px;
+            padding: 15px;
+            border: 2px solid #444;
+            border-radius: 8px;
+            background: #1a1a2e;
             color: white;
             font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #ff4757;
         }
         button {
-            padding: 12px 25px;
-            background-color: #ff0000;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
             font-size: 16px;
-            transition: background 0.3s;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        button:hover { background-color: #cc0000; }
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 71, 87, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
 
-        /* Contenedor del video responsive */
+        /* Contenedor del video */
         .video-wrapper {
             position: relative;
-            padding-bottom: 56.25%; /* Ratio 16:9 */
+            width: 100%;
+            padding-bottom: 56.25%;
             height: 0;
-            overflow: hidden;
-            border-radius: 8px;
             background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            display: none;
         }
         
         iframe {
@@ -71,72 +94,164 @@
             border: 0;
         }
 
-        .nota {
-            margin-top: 15px;
-            font-size: 0.9em;
-            color: #aaa;
+        /* Loader animado */
+        .loader {
+            display: none;
             text-align: center;
+            padding: 50px;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #444;
+            border-top: 5px solid #ff4757;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-msg {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .info-box {
+            background: #3a3a5e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.9em;
+            border-left: 4px solid #ff4757;
+        }
+        
+        .example-link {
+            background: #1a1a2e;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.85em;
+            margin-top: 10px;
+            word-break: break-all;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h2>Cargar Lista de Reproducción</h2>
-        <p>Pega el enlace completo de la playlist de YouTube:</p>
+        <h2>🎬 Visor de Playlist de YouTube</h2>
         
         <div class="input-group">
-            <input type="text" id="playlistLink" placeholder="https://www.youtube.com/playlist?list=...">
-            <button onclick="cargarPlaylist()">Cargar Lista</button>
+            <input type="text" id="playlistLink" placeholder="Pega aquí el link de la playlist...">
+            <button onclick="cargarPlaylist()">▶ Cargar Lista</button>
         </div>
 
-        <div id="error-msg" style="color: #ff6b6b; margin-bottom: 10px; display: none;"></div>
+        <div id="error-msg" class="error-msg"></div>
 
-        <!-- Aquí aparecerá el reproductor CON LA LISTA AL LADO -->
-        <div class="video-wrapper" id="video-container" style="display:none;">
+        <!-- Loader -->
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p>Cargando playlist...</p>
+        </div>
+
+        <!-- Reproductor -->
+        <div class="video-wrapper" id="video-container">
             <iframe id="youtube-player" 
                 src="" 
                 title="YouTube video player" 
                 frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                 allowfullscreen>
             </iframe>
         </div>
         
-        <p class="nota">Nota: La lista de videos aparecerá a la derecha del video (en PC) o abajo (en móvil) automáticamente.</p>
+        <div class="info-box">
+            <strong>ℹ️ Información:</strong>
+            <p>La lista de reproducción aparecerá a la derecha del video (en PC) o debajo (en móvil). 
+            Si no ves la lista, asegúrate de que el link sea de una playlist pública.</p>
+            <p><strong>Ejemplo de link válido:</strong></p>
+            <div class="example-link">https://www.youtube.com/playlist?list=PLxxxxxxxxxxxxx</div>
+        </div>
     </div>
 
     <script>
         function cargarPlaylist() {
-            const input = document.getElementById('playlistLink').value;
+            const input = document.getElementById('playlistLink').value.trim();
             const container = document.getElementById('video-container');
             const iframe = document.getElementById('youtube-player');
             const errorMsg = document.getElementById('error-msg');
+            const loader = document.getElementById('loader');
 
+            // Resetear estados
             errorMsg.style.display = 'none';
+            container.style.display = 'none';
+            loader.style.display = 'block';
 
-            // 1. Expresión regular para encontrar el ID de la lista
-            // Busca "list=" y captura los caracteres alfanuméricos y guiones que siguen
-            const regex = /[?&]list=([^&]+)/;
-            const match = input.match(regex);
+            // Validar que haya input
+            if (!input) {
+                mostrarError('⚠️ Por favor, pega un link de playlist.');
+                loader.style.display = 'none';
+                return;
+            }
 
-            if (match && match[1]) {
-                const playlistId = match[1];
+            // Extraer el ID de la playlist
+            const playlistId = extraerPlaylistId(input);
+
+            if (playlistId) {
+                // Construir URL con múltiples parámetros para mejor compatibilidad
+                const embedUrl = `https://www.youtube.com/embed?listType=playlist&list=${playlistId}&autoplay=0&rel=0&modestbranding=1`;
                 
-                // 2. Construir la URL MÁGICA
-                // listType=playlist es lo que fuerza a YouTube a mostrar la lista lateral
-                const embedUrl = `https://www.youtube.com/embed?listType=playlist&list=${playlistId}`;
-                
-                // 3. Cargar en el iframe
+                // Cargar el iframe
                 iframe.src = embedUrl;
-                container.style.display = 'block';
+                
+                // Mostrar el contenedor después de un pequeño delay para que cargue
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    container.style.display = 'block';
+                }, 1500);
             } else {
-                // Error si el link no tiene "list="
-                errorMsg.innerText = "Error: El enlace no parece ser una playlist válida. Asegúrate de que tenga '?list=' en la URL.";
-                errorMsg.style.display = 'block';
-                container.style.display = 'none';
+                mostrarError('❌ Link inválido. Asegúrate de que sea una playlist de YouTube y contenga "list=" en la URL.');
+                loader.style.display = 'none';
             }
         }
+
+        function extraerPlaylistId(url) {
+            // Método 1: Buscar list= en la URL
+            const regex1 = /[?&]list=([^&]+)/;
+            const match1 = url.match(regex1);
+            if (match1 && match1[1]) {
+                return match1[1];
+            }
+
+            // Método 2: Para URLs cortas o diferentes formatos
+            const regex2 = /playlist\?list=([^&]+)/;
+            const match2 = url.match(regex2);
+            if (match2 && match2[1]) {
+                return match2[1];
+            }
+
+            return null;
+        }
+
+        function mostrarError(mensaje) {
+            const errorMsg = document.getElementById('error-msg');
+            errorMsg.innerText = mensaje;
+            errorMsg.style.display = 'block';
+        }
+
+        // Permitir cargar con Enter
+        document.getElementById('playlistLink').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                cargarPlaylist();
+            }
+        });
     </script>
 
 </body>
